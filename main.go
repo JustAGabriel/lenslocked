@@ -13,9 +13,15 @@ func contactHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprint(w, "<h1>Contact Page. Under construcion...</h1>")
 }
 
-func main() {
-	http.HandleFunc("/", homeHandler)
-	http.HandleFunc("/contact", contactHandler)
+func pathHandler(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path == "/contact" {
+		contactHandler(w, r)
+		return
+	}
+	homeHandler(w, r)
+}
 
+func main() {
+	http.HandleFunc("/", pathHandler)
 	http.ListenAndServe(":8000", nil)
 }
