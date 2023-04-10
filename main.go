@@ -1,11 +1,11 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/justagabriel/lenslocked/views"
 )
 
 func homeHandler(w http.ResponseWriter, r *http.Request) {
@@ -13,16 +13,15 @@ func homeHandler(w http.ResponseWriter, r *http.Request) {
 	if name == "" {
 		name = "dude"
 	}
-	fmt.Fprintf(w, "<h1>Home Page. Under construcion...Sorry, %s</h1>", name)
+	views.ExecuteTemplate(w, "home", struct{ Name string }{Name: name})
 }
 
 func contactHandler(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprint(w, "<h1>Contact Page. Under construcion...</h1>")
+	views.ExecuteTemplate(w, "contact", nil)
 }
 
 func faqHandler(w http.ResponseWriter, r *http.Request) {
-	pageHTML := `<h1>FAQ Page. Under Construction...</h1>`
-	fmt.Fprint(w, pageHTML)
+	views.ExecuteTemplate(w, "faq", nil)
 }
 
 func main() {
