@@ -14,16 +14,16 @@ func main() {
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 
-	tpl := util.Must(views.GetTemplate("home"))
+	tpl := util.Must(views.ParseFS(views.FS, "home"))
 	r.Get("/home", controllers.StaticHandler(tpl))
 
-	tpl = util.Must(views.GetTemplate("contact"))
+	tpl = util.Must(views.ParseFS(views.FS, "contact"))
 	r.Get("/contact", controllers.StaticHandler(tpl))
 
-	tpl = util.Must(views.GetTemplate("faq"))
+	tpl = util.Must(views.ParseFS(views.FS, "faq"))
 	r.Get("/faq", controllers.StaticHandler(tpl))
 
-	tpl = util.Must(views.GetTemplate("legal"))
+	tpl = util.Must(views.ParseFS(views.FS, "legal"))
 	r.Get("/legal", controllers.StaticHandler(tpl))
 
 	r.NotFound(func(w http.ResponseWriter, r *http.Request) {

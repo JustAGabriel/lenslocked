@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"html/template"
+	"io/fs"
 	"log"
 	"net/http"
 	"os"
@@ -32,6 +33,16 @@ func GetTemplate(filename string) (tmpl *template.Template, err error) {
 		return nil, errors.New(errMsg)
 	}
 	return tmpl, err
+}
+
+func ParseFS(fs fs.FS, pattern string) (htmlTpl *template.Template, err error) {
+	path := path.Join(templateSubDirName, pattern+templatesExtension)
+	htmlTpl, err = template.ParseFS(fs, path)
+	if err != nil {
+		err = fmt.Errorf("parsing template: %w", err)
+		return
+	}
+	return htmlTpl, nil
 }
 
 func ExecuteTemplate(w http.ResponseWriter, filename string, data any) {
