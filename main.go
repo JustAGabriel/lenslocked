@@ -10,21 +10,22 @@ import (
 	"github.com/justagabriel/lenslocked/views"
 )
 
+const (
+	baseLayoutFilename = "tailwind"
+)
+
 func main() {
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 
-	tpl := util.Must(views.ParseFS(views.FS, "base-layout", "home"))
+	tpl := util.Must(views.ParseFS(views.FS, baseLayoutFilename, "home"))
 	r.Get("/home", controllers.StaticHandler(tpl))
 
-	tpl = util.Must(views.ParseFS(views.FS, "base-layout", "contact"))
+	tpl = util.Must(views.ParseFS(views.FS, baseLayoutFilename, "contact"))
 	r.Get("/contact", controllers.StaticHandler(tpl))
 
-	tpl = util.Must(views.ParseFS(views.FS, "base-layout", "faq"))
+	tpl = util.Must(views.ParseFS(views.FS, baseLayoutFilename, "faq"))
 	r.Get("/faq", controllers.FAQ(tpl))
-
-	tpl = util.Must(views.ParseFS(views.FS, "base-layout", "legal"))
-	r.Get("/legal", controllers.StaticHandler(tpl))
 
 	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Page not found, dude!", http.StatusNotFound)
