@@ -5,13 +5,12 @@ import (
 	"net/http"
 )
 
-type Static struct {
-	Template template.Template
-}
-
 func StaticHandler(tpl *template.Template) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		tpl.Execute(w, nil)
+		err := tpl.Execute(w, nil)
+		if err != nil {
+			panic(err)
+		}
 	}
 }
 
