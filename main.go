@@ -27,9 +27,12 @@ func main() {
 	tpl = util.Must(views.ParseFS(views.FS, "faq", baseLayoutFilename))
 	r.Get("/faq", controllers.FAQ(tpl))
 
+	tpl = util.Must(views.ParseFS(views.FS, "signup", baseLayoutFilename))
+	r.Get("/signup", controllers.FAQ(tpl))
+
 	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Page not found, dude!", http.StatusNotFound)
 	})
 
-	http.ListenAndServe(":8000", r)
+	http.ListenAndServe("localhost:8000", r)
 }
