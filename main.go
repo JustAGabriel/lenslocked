@@ -28,7 +28,14 @@ func main() {
 	r.Get("/faq", controllers.FAQ(tpl))
 
 	tpl = util.Must(views.ParseFS(views.FS, "signup", baseLayoutFilename))
-	r.Get("/signup", controllers.FAQ(tpl))
+	usersC := controllers.User{
+		Templates: controllers.Templates{
+			New: *tpl,
+		},
+	}
+	r.Get("/signup", usersC.New)
+
+	r.Post("/signup", usersC.Create)
 
 	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Page not found, dude!", http.StatusNotFound)
