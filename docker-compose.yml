@@ -3,10 +3,10 @@ services:
   db:
     image: postgres
     restart: always
-    env_file:
-      - POSTGRES_USER: baloo
-      - POSTGRES_PASSWORD: junglebook
-      - POSTGRES_DB: lenslocked
+    environment:
+      POSTGRES_USER: baloo
+      POSTGRES_PASSWORD: junglebook
+      POSTGRES_DB: lenslocked
     ports: 
       - 5432:5432
   
@@ -14,6 +14,6 @@ services:
     image: adminer
     restart: always
     environment:
-      - ADMINER_DESIGN=darcula
+      ADMINER_DESIGN: darcula
     ports:
       - 3333:8080
