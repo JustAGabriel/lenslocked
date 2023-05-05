@@ -6,8 +6,11 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/justagabriel/lenslocked/controllers"
+	"github.com/justagabriel/lenslocked/models"
 	"github.com/justagabriel/lenslocked/util"
 	"github.com/justagabriel/lenslocked/views"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
 const (
@@ -15,6 +18,14 @@ const (
 )
 
 func main() {
+	db, err := gorm.Open(postgres.Open(models.GetConnectionString()))
+	if err != nil {
+		panic(err)
+	}
+
+	// todo: implement user login
+	userService := models.NewUserService(db)
+
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 
