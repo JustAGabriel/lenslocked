@@ -39,7 +39,7 @@ func main() {
 	r.Get("/faq", controllers.FAQ(tpl))
 
 	tpl = util.Must(views.ParseFS(views.FS, "signup", baseLayoutFilename))
-	usersC := controllers.User{
+	usersC := controllers.UserController{
 		Templates: controllers.Templates{
 			New: *tpl,
 		},

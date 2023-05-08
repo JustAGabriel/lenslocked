@@ -10,17 +10,17 @@ type Templates struct {
 	New template.Template
 }
 
-type User struct {
+type UserController struct {
 	Templates Templates
 }
 
-func (u User) New(w http.ResponseWriter, r *http.Request) {
+func (u UserController) New(w http.ResponseWriter, r *http.Request) {
 	if err := u.Templates.New.Execute(w, nil); err != nil {
 		panic(fmt.Errorf("while parsing 'new user' template: %v", err))
 	}
 }
 
-func (u User) Create(w http.ResponseWriter, r *http.Request) {
+func (u UserController) Create(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
 		http.Error(w, "Unable to parse form", http.StatusBadRequest)
 	}
