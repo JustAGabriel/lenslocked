@@ -27,7 +27,7 @@ func NewUserService(db *gorm.DB) UserService {
 	}
 }
 
-func (s UserService) CreateUser(u User) {
+func (s *UserService) CreateUser(u User) {
 	u.Email = strings.ToLower(u.Email)
-	_ = s.db.Model(&User{}).Create(u)
+	_ = s.db.Model(&User{}).Create(&u)
 }
