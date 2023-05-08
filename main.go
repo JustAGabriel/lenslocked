@@ -18,7 +18,7 @@ const (
 )
 
 func main() {
-	db, err := gorm.Open(postgres.Open(models.GetConnectionString()))
+	db, err := gorm.Open(postgres.Open(models.GetDefaultDBConfig().String()))
 	if err != nil {
 		panic(err)
 	}
