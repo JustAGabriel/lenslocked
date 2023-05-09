@@ -28,6 +28,7 @@ func main() {
 
 	tpl := util.Must(views.ParseFS(views.FS, "home", baseLayoutFilename))
 	r.Get("/home", controllers.StaticHandler(tpl))
+	r.Get("/", controllers.StaticHandler(tpl))
 
 	tpl = util.Must(views.ParseFS(views.FS, "contact", baseLayoutFilename))
 	r.Get("/contact", controllers.StaticHandler(tpl))
@@ -36,14 +37,19 @@ func main() {
 	r.Get("/faq", controllers.FAQ(tpl))
 
 	tpl = util.Must(views.ParseFS(views.FS, "signup", baseLayoutFilename))
+	tpl2 := util.Must(views.ParseFS(views.FS, "signin", baseLayoutFilename))
 	templates := controllers.UITemplates{
-		New: *tpl,
+		New:    *tpl,
+		Signin: *tpl2,
 	}
 
 	userService := models.NewUserService(db)
 	usersC := controllers.NewUserController(templates, &userService)
 	r.Get("/signup", usersC.New)
 	r.Post("/signup", usersC.Create)
+
+	r.Get("/signin", usersC.GETSignin)
+	r.Post("/signin", usersC.POSTSignin)
 
 	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Page not found, dude!", http.StatusNotFound)

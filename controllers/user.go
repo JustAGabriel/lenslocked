@@ -11,7 +11,8 @@ import (
 )
 
 type UITemplates struct {
-	New template.Template
+	New    template.Template
+	Signin template.Template
 }
 
 type UserController struct {
@@ -33,7 +34,6 @@ func (uc *UserController) New(w http.ResponseWriter, r *http.Request) {
 }
 
 func (u *UserController) Create(w http.ResponseWriter, r *http.Request) {
-	log.Default().Println("in create.")
 	if err := r.ParseForm(); err != nil {
 		http.Error(w, "Unable to parse form", http.StatusBadRequest)
 	}
@@ -53,4 +53,27 @@ func (u *UserController) Create(w http.ResponseWriter, r *http.Request) {
 	u.dbService.CreateUser(newUser)
 
 	fmt.Fprintf(w, "email: %s, pw: %s", email, pw)
+}
+
+func (uc *UserController) GETSignin(w http.ResponseWriter, r *http.Request) {
+	if err := uc.templates.Signin.Execute(w, nil); err != nil {
+		panic(fmt.Errorf("while parsing 'signin' template: %v", err))
+	}
+}
+
+func (uc *UserController) POSTSignin(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		http.Error(w, "Unable to parse form", http.StatusBadRequest)
+	}
+
+	email := r.Form.Get("email")
+	pw := r.Form.Get("password")
+
+	pwHash, err := util.GetPasswordHash(pw)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// todo: get user by email
+	log.Default().Println("received creds: ", email, pwHash)
 }
