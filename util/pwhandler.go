@@ -10,3 +10,7 @@ func GetPasswordHash(pw string) (hash string, err error) {
 
 	return string(hashBytes), nil
 }
+
+func ComparePwAndPwHash(pw, pwHash string) error {
+	return bcrypt.CompareHashAndPassword([]byte(pwHash), []byte(pw))
+}

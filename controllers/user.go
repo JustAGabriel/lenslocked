@@ -73,7 +73,17 @@ func (uc *UserController) POSTSignin(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	// todo: get user by email
 	log.Default().Println("received creds: ", email, pwHash)
+
+	usr, err := uc.dbService.GetUserByEmail(email)
+	if err != nil {
+		http.Error(w, "Username or password did not match", http.StatusUnauthorized)
+	}
+	log.Default().Printf("found user:\n%+v", usr)
+
+	if err := util.ComparePwAndPwHash(pw, usr.PasswordHash); err != nil {
+		http.Error(w, "Username or password did not match", http.StatusUnauthorized)
+	}
+
+	log.Default().Printf("user pw was correct")
 }
