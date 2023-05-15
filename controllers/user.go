@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/gorilla/csrf"
 	"github.com/justagabriel/lenslocked/models"
 	"github.com/justagabriel/lenslocked/util"
 )
@@ -27,13 +28,21 @@ func NewUserController(uiTemplates UITemplates, dbService *models.UserService) U
 	}
 }
 
-func (uc *UserController) New(w http.ResponseWriter, r *http.Request) {
-	if err := uc.templates.New.Execute(w, nil); err != nil {
+func (uc *UserController) GETSignup(w http.ResponseWriter, r *http.Request) {
+	type Data struct {
+		CSRFField template.HTML
+	}
+
+	data := Data{
+		CSRFField: csrf.TemplateField(r),
+	}
+
+	if err := uc.templates.New.Execute(w, data); err != nil {
 		panic(fmt.Errorf("while parsing 'new user' template: %v", err))
 	}
 }
 
-func (u *UserController) Create(w http.ResponseWriter, r *http.Request) {
+func (u *UserController) POSTSignup(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseForm(); err != nil {
 		http.Error(w, "Unable to parse form", http.StatusBadRequest)
 	}
