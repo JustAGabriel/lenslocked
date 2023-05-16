@@ -65,7 +65,17 @@ func (u *UserController) POSTSignup(w http.ResponseWriter, r *http.Request) {
 }
 
 func (uc *UserController) GETSignin(w http.ResponseWriter, r *http.Request) {
-	if err := uc.templates.Signin.Execute(w, nil); err != nil {
+	type SigninData struct {
+		CSRFField template.HTML
+		Email     string
+	}
+
+	data := SigninData{
+		CSRFField: csrf.TemplateField(r),
+		Email:     "",
+	}
+
+	if err := uc.templates.Signin.Execute(w, data); err != nil {
 		panic(fmt.Errorf("while parsing 'signin' template: %v", err))
 	}
 }
@@ -94,5 +104,5 @@ func (uc *UserController) POSTSignin(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Username or password did not match", http.StatusUnauthorized)
 	}
 
-	log.Default().Printf("user pw was correct")
+	fmt.Fprintf(w, "creds for user '%s' were correct", email)
 }
