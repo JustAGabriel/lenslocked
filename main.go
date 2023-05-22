@@ -51,8 +51,9 @@ func main() {
 		Signin: *tpl2,
 	}
 
+	sessionService := models.NewSessionService(db)
 	userService := models.NewUserService(db)
-	usersC := controllers.NewUserController(templates, &userService)
+	usersC := controllers.NewUserController(templates, &userService, &sessionService)
 	r.Get("/signup", usersC.GETSignup)
 	r.Post("/signup", usersC.POSTSignup)
 

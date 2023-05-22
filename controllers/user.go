@@ -17,14 +17,16 @@ type UITemplates struct {
 }
 
 type UserController struct {
-	templates UITemplates
-	dbService *models.UserService
+	templates      UITemplates
+	dbService      *models.UserService
+	sessionService *models.SessionService
 }
 
-func NewUserController(uiTemplates UITemplates, dbService *models.UserService) UserController {
+func NewUserController(uiTemplates UITemplates, dbService *models.UserService, sessionService *models.SessionService) UserController {
 	return UserController{
-		templates: uiTemplates,
-		dbService: dbService,
+		templates:      uiTemplates,
+		dbService:      dbService,
+		sessionService: sessionService,
 	}
 }
 
@@ -104,5 +106,17 @@ func (uc *UserController) POSTSignin(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Username or password did not match", http.StatusUnauthorized)
 	}
 
+	s, err := uc.sessionService.GetNewSession(usr.ID)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	c := http.Cookie{
+		Name:     "lenslocked-login",
+		Value:    s.TokenHash,
+		Path:     "/",
+		HttpOnly: false,
+	}
+	http.SetCookie(w, &c)
 	fmt.Fprintf(w, "creds for user '%s' were correct", email)
 }
