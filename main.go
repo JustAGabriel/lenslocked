@@ -35,14 +35,14 @@ func main() {
 	r.Use(csrfMw)
 
 	tpl := util.Must(views.ParseFS(views.FS, "home", baseLayoutFilename))
-	r.Get("/home", controllers.StaticHandler(tpl))
-	r.Get("/", controllers.StaticHandler(tpl))
+	r.Get(controllers.WebsiteHomeURL, controllers.StaticHandler(tpl))
+	r.Get(controllers.WebsiteRootURL, controllers.StaticHandler(tpl))
 
 	tpl = util.Must(views.ParseFS(views.FS, "contact", baseLayoutFilename))
-	r.Get("/contact", controllers.StaticHandler(tpl))
+	r.Get(controllers.WebsiteContactURL, controllers.StaticHandler(tpl))
 
 	tpl = util.Must(views.ParseFS(views.FS, "faq", baseLayoutFilename))
-	r.Get("/faq", controllers.FAQ(tpl))
+	r.Get(controllers.WebsiteFaqURL, controllers.FAQ(tpl))
 
 	tpl = util.Must(views.ParseFS(views.FS, "signup", baseLayoutFilename))
 	tpl2 := util.Must(views.ParseFS(views.FS, "signin", baseLayoutFilename))
@@ -54,11 +54,11 @@ func main() {
 	sessionService := models.NewSessionService(db)
 	userService := models.NewUserService(db)
 	usersC := controllers.NewUserController(templates, &userService, &sessionService)
-	r.Get("/signup", usersC.GETSignup)
-	r.Post("/signup", usersC.POSTSignup)
+	r.Get(controllers.SignupURL, usersC.GETSignup)
+	r.Post(controllers.SignupURL, usersC.POSTSignup)
 
-	r.Get("/signin", usersC.GETSignin)
-	r.Post("/signin", usersC.POSTSignin)
+	r.Get(controllers.SigninURL, usersC.GETSignin)
+	r.Post(controllers.SigninURL, usersC.POSTSignin)
 
 	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Page not found, dude!", http.StatusNotFound)

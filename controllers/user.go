@@ -63,7 +63,7 @@ func (u *UserController) POSTSignup(w http.ResponseWriter, r *http.Request) {
 	}
 	u.dbService.CreateUser(newUser)
 
-	fmt.Fprintf(w, "email: %s, pw: %s", email, pw)
+	http.Redirect(w, r, SigninURL, http.StatusFound)
 }
 
 func (uc *UserController) GETSignin(w http.ResponseWriter, r *http.Request) {
@@ -110,13 +110,7 @@ func (uc *UserController) POSTSignin(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Fatal(err)
 	}
+	util.SetCookie(w, "lenslocked-login", s.TokenHash)
 
-	c := http.Cookie{
-		Name:     "lenslocked-login",
-		Value:    s.TokenHash,
-		Path:     "/",
-		HttpOnly: false,
-	}
-	http.SetCookie(w, &c)
-	fmt.Fprintf(w, "creds for user '%s' were correct", email)
+	http.Redirect(w, r, UserHomeURL, http.StatusFound)
 }
