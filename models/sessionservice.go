@@ -22,8 +22,8 @@ func NewSessionService(db *gorm.DB) SessionService {
 
 func (ss *SessionService) GetNewSession(userId uint) (*Session, error) {
 	s := &Session{
-		UserID:    userId,
-		TokenHash: util.GetSessionToken(),
+		UserID: userId,
+		Token:  util.GetSessionToken(),
 	}
 	_ = ss.db.Model(&Session{}).Create(s)
 

@@ -110,7 +110,10 @@ func (uc *UserController) POSTSignin(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	util.SetCookie(w, "lenslocked-login", s.TokenHash)
+	err = util.SetCookie(w, "lenslocked-login", s.Token)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	http.Redirect(w, r, UserHomeURL, http.StatusFound)
 }
