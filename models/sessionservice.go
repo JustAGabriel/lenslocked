@@ -1,6 +1,9 @@
 package models
 
 import (
+	"crypto/sha256"
+	"encoding/base64"
+
 	"github.com/justagabriel/lenslocked/util"
 	"gorm.io/gorm"
 )
@@ -21,10 +24,14 @@ func NewSessionService(db *gorm.DB) SessionService {
 }
 
 func (ss *SessionService) GetNewSession(userId uint) (*Session, error) {
+	token := util.GetSessionToken()
+	hashedTokenBytes := sha256.Sum256([]byte(token))
+	hashedToken := base64.URLEncoding.EncodeToString(hashedTokenBytes[:])
 	s := &Session{
 		UserID: userId,
-		Token:  util.GetSessionToken(),
+		Token:  hashedToken,
 	}
+
 	_ = ss.db.Model(&Session{}).Create(s)
 
 	return s, nil
