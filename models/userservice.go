@@ -39,13 +39,25 @@ func (s *UserService) GetUserByEmail(email string) (User, error) {
 
 	var usr User
 	res := s.db.Where(&User{Email: normalizedEmail}).First(&usr)
-
 	if res.Error != nil {
 		return usr, res.Error
 	}
 
 	if usr.Email == "" {
 		return usr, fmt.Errorf("could not find user with email '%s'", normalizedEmail)
+	}
+
+	return usr, nil
+}
+
+func (s *UserService) GetUserById(id uint) (User, error) {
+	usr := User{
+		Model: gorm.Model{ID: id},
+	}
+
+	res := s.db.Where(&usr).First(&usr)
+	if res.Error != nil {
+		return User{}, res.Error
 	}
 
 	return usr, nil

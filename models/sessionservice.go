@@ -16,6 +16,11 @@ type SessionService struct {
 	db *gorm.DB
 }
 
+func hashToken(token string) string {
+	hashedTokenBytes := sha256.Sum256([]byte(token))
+	return base64.URLEncoding.EncodeToString(hashedTokenBytes[:])
+}
+
 func NewSessionService(db *gorm.DB) SessionService {
 	db.AutoMigrate(&Session{})
 	return SessionService{
@@ -25,8 +30,7 @@ func NewSessionService(db *gorm.DB) SessionService {
 
 func (ss *SessionService) GetNewSession(userId uint) (*Session, error) {
 	token := util.GetSessionToken()
-	hashedTokenBytes := sha256.Sum256([]byte(token))
-	hashedToken := base64.URLEncoding.EncodeToString(hashedTokenBytes[:])
+	hashedToken := hashToken(token)
 	s := &Session{
 		UserID: userId,
 		Token:  hashedToken,
@@ -35,4 +39,18 @@ func (ss *SessionService) GetNewSession(userId uint) (*Session, error) {
 	_ = ss.db.Model(&Session{}).Create(s)
 
 	return s, nil
+}
+
+func (ss *SessionService) GetSessionByToken(unhashedToken string) (Session, error) {
+	hashedToken := hashToken(unhashedToken)
+	session := Session{
+		Token: hashedToken,
+	}
+
+	res := ss.db.Where(&session).First(&session)
+	if res.Error != nil {
+		return Session{}, res.Error
+	}
+
+	return session, nil
 }

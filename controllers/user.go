@@ -11,6 +11,10 @@ import (
 	"github.com/justagabriel/lenslocked/util"
 )
 
+const (
+	SessionCookieName = "lenslocked"
+)
+
 type UITemplates struct {
 	New    template.Template
 	Signin template.Template
@@ -28,6 +32,25 @@ func NewUserController(uiTemplates UITemplates, dbService *models.UserService, s
 		dbService:      dbService,
 		sessionService: sessionService,
 	}
+}
+
+func (uc *UserController) GetUserBySessionToken(r *http.Request) (models.User, error) {
+	sessionToken, err := util.GetSessionTokenFromCookie(SessionCookieName, r)
+	if err != nil {
+		return models.User{}, fmt.Errorf("error while trying to get session: %+v", err)
+	}
+
+	s, err2 := uc.sessionService.GetSessionByToken(sessionToken)
+	if err2 != nil {
+		return models.User{}, fmt.Errorf("error while trying to get session: %+v", err2)
+	}
+
+	u, err3 := uc.dbService.GetUserById(s.UserID)
+	if err3 != nil {
+		return models.User{}, fmt.Errorf("error while trying to get session: %+v", err3)
+	}
+
+	return u, nil
 }
 
 func (uc *UserController) GETSignup(w http.ResponseWriter, r *http.Request) {
@@ -110,7 +133,7 @@ func (uc *UserController) POSTSignin(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	err = util.SetCookie(w, "lenslocked-login", s.Token)
+	err = util.SetCookie(w, SessionCookieName, s.Token)
 	if err != nil {
 		log.Fatal(err)
 	}
