@@ -54,3 +54,12 @@ func (ss *SessionService) GetSessionByToken(unhashedToken string) (Session, erro
 
 	return session, nil
 }
+
+func (ss *SessionService) DeleteSessionByToken(token string) error {
+	result := ss.db.Delete(&Session{Token: token})
+	if result.Error != nil {
+		return result.Error
+	}
+
+	return nil
+}

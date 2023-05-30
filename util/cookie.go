@@ -5,7 +5,7 @@ import (
 	"net/http"
 )
 
-func SetCookie(r http.ResponseWriter, name string, value string) error {
+func SetCookie(w http.ResponseWriter, name string, value string) error {
 	c := http.Cookie{
 		Name:     name,
 		Value:    value,
@@ -17,8 +17,12 @@ func SetCookie(r http.ResponseWriter, name string, value string) error {
 		return err
 	}
 
-	http.SetCookie(r, &c)
+	http.SetCookie(w, &c)
 	return nil
+}
+
+func DeleteCookie(w http.ResponseWriter, name string) error {
+	return SetCookie(w, name, "")
 }
 
 func GetSessionTokenFromCookie(cookieName string, request *http.Request) (string, error) {

@@ -34,7 +34,7 @@ func NewUserController(uiTemplates UITemplates, dbService *models.UserService, s
 	}
 }
 
-func (uc *UserController) GetUserBySessionToken(r *http.Request) (models.User, error) {
+func (uc *UserController) GetUserFromRequest(r *http.Request) (models.User, error) {
 	sessionToken, err := util.GetSessionTokenFromCookie(SessionCookieName, r)
 	if err != nil {
 		return models.User{}, fmt.Errorf("error while trying to get session: %+v", err)
@@ -139,4 +139,23 @@ func (uc *UserController) POSTSignin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.Redirect(w, r, UserHomeURL, http.StatusFound)
+}
+
+func (uc *UserController) POSTSignout(w http.ResponseWriter, r *http.Request) {
+	sessionToken, err := util.GetSessionTokenFromCookie(SessionCookieName, r)
+	if err != nil {
+		log.Default().Printf("error while trying to get session: %+v\n", err)
+	}
+
+	err2 := uc.sessionService.DeleteSessionByToken(sessionToken)
+	if err2 != nil {
+		log.Default().Printf("error while trying to delete the session: %+v\n", err2)
+	}
+
+	err3 := util.DeleteCookie(w, SessionCookieName)
+	if err3 != nil {
+		log.Default().Printf("error while trying to eelete the session cookie: %+v\n", err3)
+	}
+
+	http.Redirect(w, r, WebsiteHomeURL, http.StatusFound)
 }
