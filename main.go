@@ -59,7 +59,7 @@ func main() {
 
 	r.Get(controllers.SigninURL, usersC.GETSignin)
 	r.Post(controllers.SigninURL, usersC.POSTSignin)
-	r.Post(controllers.SignoutURL, usersC.POSTSignout)
+	r.Get(controllers.SignoutURL, usersC.GETSignout)
 
 	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Page not found, dude!", http.StatusNotFound)

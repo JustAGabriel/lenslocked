@@ -141,7 +141,7 @@ func (uc *UserController) POSTSignin(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, UserHomeURL, http.StatusFound)
 }
 
-func (uc *UserController) POSTSignout(w http.ResponseWriter, r *http.Request) {
+func (uc *UserController) GETSignout(w http.ResponseWriter, r *http.Request) {
 	sessionToken, err := util.GetSessionTokenFromCookie(SessionCookieName, r)
 	if err != nil {
 		log.Default().Printf("error while trying to get session: %+v\n", err)
