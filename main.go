@@ -24,6 +24,11 @@ func main() {
 		panic(err)
 	}
 
+	err = models.Migrate(db, "./models/migrations")
+	if err != nil {
+		panic(err)
+	}
+
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 
