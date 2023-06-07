@@ -2,8 +2,9 @@ package models
 
 import (
 	"fmt"
+	"io/fs"
 
-	"github.com/pressly/goose"
+	"github.com/pressly/goose/v3"
 	"gorm.io/gorm"
 )
 
@@ -31,7 +32,12 @@ func GetDefaultDBConfig() PostgresConfig {
 	}
 }
 
-func Migrate(db *gorm.DB, dir string) error {
+func Migrate(db *gorm.DB, migrationsFS fs.FS) error {
+	goose.SetBaseFS(migrationsFS)
+	defer func() {
+		goose.SetBaseFS(nil)
+	}()
+
 	err := goose.SetDialect("postgres")
 	if err != nil {
 		return fmt.Errorf("migration, set dialect: %w", err)
@@ -42,7 +48,7 @@ func Migrate(db *gorm.DB, dir string) error {
 		return fmt.Errorf("migration, db conversion: %w", err2)
 	}
 
-	err = goose.Up(standardDB, dir)
+	err = goose.Up(standardDB, ".")
 	if err != nil {
 		return fmt.Errorf("migration, up: %w", err)
 	}

@@ -8,6 +8,7 @@ import (
 	"github.com/gorilla/csrf"
 	"github.com/justagabriel/lenslocked/controllers"
 	"github.com/justagabriel/lenslocked/models"
+	"github.com/justagabriel/lenslocked/models/migrations"
 	"github.com/justagabriel/lenslocked/util"
 	"github.com/justagabriel/lenslocked/views"
 	"gorm.io/driver/postgres"
@@ -24,7 +25,7 @@ func main() {
 		panic(err)
 	}
 
-	err = models.Migrate(db, "./models/migrations")
+	err = models.Migrate(db, migrations.FS)
 	if err != nil {
 		panic(err)
 	}
