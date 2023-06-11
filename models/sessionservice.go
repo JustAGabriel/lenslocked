@@ -1,7 +1,6 @@
 package models
 
 import (
-	"context"
 	"crypto/sha256"
 	"encoding/base64"
 	"fmt"
@@ -9,7 +8,6 @@ import (
 
 	"github.com/justagabriel/lenslocked/util"
 	"gorm.io/gorm"
-	"gorm.io/gorm/logger"
 )
 
 const (
@@ -88,41 +86,4 @@ func (ss *SessionService) GetUserFromRequest(r *http.Request) (User, error) {
 	}
 
 	return u, nil
-}
-
-func (ss *SessionService) SetUserMiddleware(handler http.Handler) http.Handler {
-	f := func(w http.ResponseWriter, r *http.Request) {
-		user, err := ss.GetUserFromRequest(r)
-		if err != nil {
-			handler.ServeHTTP(w, r)
-			return
-		}
-
-		ctx := WithUser(r.Context(), &user)
-		r = r.WithContext(ctx)
-		handler.ServeHTTP(w, r)
-	}
-
-	return http.HandlerFunc(f)
-}
-
-type ctxKey string
-
-const (
-	key ctxKey = "user"
-)
-
-func WithUser(ctx context.Context, user *User) context.Context {
-	return context.WithValue(ctx, key, user)
-}
-
-func GetUser(context context.Context) *User {
-	val := context.Value(key)
-	user, ok := val.(*User)
-	if !ok {
-		logger.Default.Warn(context, "could not get user from request context")
-		return nil
-	}
-
-	return user
 }

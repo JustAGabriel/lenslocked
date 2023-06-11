@@ -34,10 +34,12 @@ func main() {
 	// register middlewares
 	r := chi.NewRouter()
 
+	r.Use(middleware.Logger)
+
 	userService := models.NewUserService(db)
 	sessionService := models.NewSessionService(db, &userService)
-
-	r.Use(middleware.Logger)
+	userMiddleware := controllers.NewUserMiddleware(&sessionService)
+	r.Use(userMiddleware.SetUserMiddleware)
 
 	csrfKey := "gFvi45R4fy5xNBlnEeZtQbfAVCYEIAUX"
 	csrfMw := csrf.Protect(
@@ -45,7 +47,6 @@ func main() {
 		csrf.Secure(false),
 	)
 	r.Use(csrfMw)
-	r.Use(sessionService.SetUserMiddleware)
 
 	// register endpoints
 	tpl := util.Must(views.ParseFS(views.FS, "home", baseLayoutFilename))
