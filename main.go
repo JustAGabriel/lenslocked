@@ -20,6 +20,7 @@ const (
 )
 
 func main() {
+	// perform database migration
 	db, err := gorm.Open(postgres.Open(models.GetDefaultDBConfig().String()))
 	if err != nil {
 		panic(err)
@@ -30,7 +31,12 @@ func main() {
 		panic(err)
 	}
 
+	// register middlewares
 	r := chi.NewRouter()
+
+	userService := models.NewUserService(db)
+	sessionService := models.NewSessionService(db, &userService)
+
 	r.Use(middleware.Logger)
 
 	csrfKey := "gFvi45R4fy5xNBlnEeZtQbfAVCYEIAUX"
@@ -39,7 +45,9 @@ func main() {
 		csrf.Secure(false),
 	)
 	r.Use(csrfMw)
+	r.Use(sessionService.SetUserMiddleware)
 
+	// register endpoints
 	tpl := util.Must(views.ParseFS(views.FS, "home", baseLayoutFilename))
 	r.Get(controllers.WebsiteHomeURL, controllers.StaticHandler(tpl))
 	r.Get(controllers.WebsiteRootURL, controllers.StaticHandler(tpl))
@@ -57,8 +65,6 @@ func main() {
 		Signin: *tpl2,
 	}
 
-	sessionService := models.NewSessionService(db)
-	userService := models.NewUserService(db)
 	usersC := controllers.NewUserController(templates, &userService, &sessionService)
 	r.Get(controllers.SignupURL, usersC.GETSignup)
 	r.Post(controllers.SignupURL, usersC.POSTSignup)
