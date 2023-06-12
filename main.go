@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -31,6 +32,17 @@ func main() {
 		panic(err)
 	}
 
+	// create static UI templates
+	homeTemplate := util.Must(views.ParseFS(views.FS, "home", baseLayoutFilename))
+	contactTemplate := util.Must(views.ParseFS(views.FS, "contact", baseLayoutFilename))
+	FaqTemplate := util.Must(views.ParseFS(views.FS, "faq", baseLayoutFilename))
+	signupTemplate := util.Must(views.ParseFS(views.FS, "signup", baseLayoutFilename))
+	signinTemplate := util.Must(views.ParseFS(views.FS, "signin", baseLayoutFilename))
+	templates := controllers.UITemplates{
+		New:    *signupTemplate,
+		Signin: *signinTemplate,
+	}
+
 	// register middlewares
 	r := chi.NewRouter()
 
@@ -39,6 +51,8 @@ func main() {
 	userService := models.NewUserService(db)
 	sessionService := models.NewSessionService(db, &userService)
 	userMiddleware := controllers.NewUserMiddleware(&sessionService)
+	userController := controllers.NewUserController(templates, &userService, &sessionService)
+
 	r.Use(userMiddleware.SetUserMiddleware)
 
 	csrfKey := "gFvi45R4fy5xNBlnEeZtQbfAVCYEIAUX"
@@ -48,31 +62,25 @@ func main() {
 	)
 	r.Use(csrfMw)
 
-	// register endpoints
-	tpl := util.Must(views.ParseFS(views.FS, "home", baseLayoutFilename))
-	r.Get(controllers.WebsiteHomeURL, controllers.StaticHandler(tpl))
-	r.Get(controllers.WebsiteRootURL, controllers.StaticHandler(tpl))
+	r.Route("/users/me", func(r chi.Router) {
+		r.Use(userMiddleware.RequireUserMiddleware)
+		r.Get("/", func(w http.ResponseWriter, r *http.Request) {
+			fmt.Fprint(w, "not implemented :D") // todo: implement user home page
+		})
+	})
 
-	tpl = util.Must(views.ParseFS(views.FS, "contact", baseLayoutFilename))
-	r.Get(controllers.WebsiteContactURL, controllers.StaticHandler(tpl))
+	// register routes
+	r.Get(controllers.WebsiteHomeURL, controllers.StaticHandler(homeTemplate))
+	r.Get(controllers.WebsiteRootURL, controllers.StaticHandler(homeTemplate))
+	r.Get(controllers.WebsiteContactURL, controllers.StaticHandler(contactTemplate))
+	r.Get(controllers.WebsiteFaqURL, controllers.FAQ(FaqTemplate))
 
-	tpl = util.Must(views.ParseFS(views.FS, "faq", baseLayoutFilename))
-	r.Get(controllers.WebsiteFaqURL, controllers.FAQ(tpl))
+	r.Get(controllers.SignupURL, userController.GETSignup)
+	r.Post(controllers.SignupURL, userController.POSTSignup)
 
-	tpl = util.Must(views.ParseFS(views.FS, "signup", baseLayoutFilename))
-	tpl2 := util.Must(views.ParseFS(views.FS, "signin", baseLayoutFilename))
-	templates := controllers.UITemplates{
-		New:    *tpl,
-		Signin: *tpl2,
-	}
-
-	usersC := controllers.NewUserController(templates, &userService, &sessionService)
-	r.Get(controllers.SignupURL, usersC.GETSignup)
-	r.Post(controllers.SignupURL, usersC.POSTSignup)
-
-	r.Get(controllers.SigninURL, usersC.GETSignin)
-	r.Post(controllers.SigninURL, usersC.POSTSignin)
-	r.Get(controllers.SignoutURL, usersC.GETSignout)
+	r.Get(controllers.SigninURL, userController.GETSignin)
+	r.Post(controllers.SigninURL, userController.POSTSignin)
+	r.Get(controllers.SignoutURL, userController.GETSignout)
 
 	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Page not found, dude!", http.StatusNotFound)

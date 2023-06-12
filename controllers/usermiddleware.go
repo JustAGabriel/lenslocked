@@ -39,6 +39,18 @@ func getUser(context context.Context) *models.User {
 	return user
 }
 
+func (um *UserMiddleware) RequireUserMiddleware(handler http.Handler) http.Handler {
+	f := func(w http.ResponseWriter, r *http.Request) {
+		u := getUser(r.Context())
+		if u != nil {
+			http.Redirect(w, r, "/signin", http.StatusUnauthorized)
+		}
+		handler.ServeHTTP(w, r)
+	}
+
+	return http.HandlerFunc(f)
+}
+
 func (um *UserMiddleware) SetUserMiddleware(handler http.Handler) http.Handler {
 	f := func(w http.ResponseWriter, r *http.Request) {
 		user, err := um.sessionService.GetUserFromRequest(r)
