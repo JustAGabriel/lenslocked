@@ -43,6 +43,7 @@ func (ss *SessionService) GetNewSession(userId uint) (*Session, error) {
 
 	_ = ss.db.Model(&Session{}).Create(s)
 
+	s.Token = token
 	return s, nil
 }
 

@@ -42,7 +42,7 @@ func getUser(context context.Context) *models.User {
 func (um *UserMiddleware) RequireUserMiddleware(handler http.Handler) http.Handler {
 	f := func(w http.ResponseWriter, r *http.Request) {
 		u := getUser(r.Context())
-		if u != nil {
+		if u == nil {
 			http.Redirect(w, r, "/signin", http.StatusUnauthorized)
 		}
 		handler.ServeHTTP(w, r)
