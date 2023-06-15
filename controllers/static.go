@@ -3,11 +3,23 @@ package controllers
 import (
 	"html/template"
 	"net/http"
+
+	"github.com/justagabriel/lenslocked/models"
 )
+
+type TemplateBaseData struct {
+	User models.User
+}
 
 func StaticHandler(tpl *template.Template) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		err := tpl.Execute(w, nil)
+		data := TemplateBaseData{}
+		user := GetUserFromContext(r.Context())
+		if user != nil {
+			data.User = *user
+		}
+
+		err := tpl.Execute(w, data)
 		if err != nil {
 			panic(err)
 		}

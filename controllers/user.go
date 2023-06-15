@@ -32,6 +32,7 @@ func NewUserController(uiTemplates UITemplates, dbService *models.UserService, s
 
 func (uc *UserController) GETSignup(w http.ResponseWriter, r *http.Request) {
 	type Data struct {
+		TemplateBaseData
 		CSRFField template.HTML
 	}
 
@@ -68,6 +69,7 @@ func (u *UserController) POSTSignup(w http.ResponseWriter, r *http.Request) {
 
 func (uc *UserController) GETSignin(w http.ResponseWriter, r *http.Request) {
 	type SigninData struct {
+		TemplateBaseData
 		CSRFField template.HTML
 		Email     string
 	}
