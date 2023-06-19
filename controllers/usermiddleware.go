@@ -28,7 +28,7 @@ func withUser(ctx context.Context, user *models.User) context.Context {
 	return context.WithValue(ctx, key, user)
 }
 
-func getUser(context context.Context) *models.User {
+func GetUserFromContext(context context.Context) *models.User {
 	val := context.Value(key)
 	user, ok := val.(*models.User)
 	if !ok {
@@ -41,9 +41,11 @@ func getUser(context context.Context) *models.User {
 
 func (um *UserMiddleware) RequireUserMiddleware(handler http.Handler) http.Handler {
 	f := func(w http.ResponseWriter, r *http.Request) {
-		u := getUser(r.Context())
+		u := GetUserFromContext(r.Context())
 		if u == nil {
-			http.Redirect(w, r, "/signin", http.StatusUnauthorized)
+			logger.Default.Warn(r.Context(), "user auth required but not given - redirecting to signin")
+			http.Redirect(w, r, SigninURL, http.StatusFound)
+			return
 		}
 		handler.ServeHTTP(w, r)
 	}

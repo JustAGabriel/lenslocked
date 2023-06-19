@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/justagabriel/lenslocked/util"
@@ -34,6 +35,18 @@ func NewSessionService(db *gorm.DB, userService *UserService) SessionService {
 }
 
 func (ss *SessionService) GetNewSession(userId uint) (*Session, error) {
+	// implement deletion of previous sessions associated with the given user id
+	// usecase: user cookie was deleted -> auth will fail, new user session created -- conflict in db since
+	// userid already is meantioned in other sesssion entry
+	userExistsQueryResult := ss.db.Model(&Session{}).First(&Session{UserID: userId})
+	hasUserExistingSession := userExistsQueryResult.Error == nil && userExistsQueryResult.RowsAffected == 1
+	if hasUserExistingSession {
+		userSessionDeletionResult := ss.db.Unscoped().Model(&Session{}).Where(&Session{UserID: userId}).Delete(&Session{})
+		if userSessionDeletionResult.Error != nil {
+			log.Default().Printf("error while deleting session: %s", userSessionDeletionResult.Error)
+		}
+	}
+
 	token := util.GetSessionToken()
 	hashedToken := hashToken(token)
 	s := &Session{
@@ -41,7 +54,10 @@ func (ss *SessionService) GetNewSession(userId uint) (*Session, error) {
 		Token:  hashedToken,
 	}
 
-	_ = ss.db.Model(&Session{}).Create(s)
+	creation_transaction := ss.db.Model(&Session{}).Create(s)
+	if creation_transaction.Error != nil {
+		return nil, fmt.Errorf("error while creating new session: %s", creation_transaction.Error)
+	}
 
 	s.Token = token
 	return s, nil
@@ -53,7 +69,7 @@ func (ss *SessionService) GetSessionByToken(unhashedToken string) (Session, erro
 		Token: hashedToken,
 	}
 
-	res := ss.db.Where(&session).First(&session)
+	res := ss.db.Model(&Session{}).First(&session)
 	if res.Error != nil {
 		return Session{}, res.Error
 	}
