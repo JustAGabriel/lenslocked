@@ -43,14 +43,14 @@ func main() {
 		Signin: *signinTemplate,
 	}
 
+	// initialize services
+	userService := models.NewUserService(db)
+	sessionService := models.NewSessionService(db, &userService)
+	userController := controllers.NewUserController(templates, &userService, &sessionService)
+
 	// register middlewares
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
-
-	userService := models.NewUserService(db)
-	sessionService := models.NewSessionService(db, &userService)
-	userMiddleware := controllers.NewUserMiddleware(&sessionService)
-	userController := controllers.NewUserController(templates, &userService, &sessionService)
 
 	csrfKey := "gFvi45R4fy5xNBlnEeZtQbfAVCYEIAUX"
 	csrfMw := csrf.Protect(
@@ -59,6 +59,7 @@ func main() {
 	)
 	r.Use(csrfMw)
 
+	userMiddleware := controllers.NewUserMiddleware(&sessionService)
 	r.Route("/users/me", func(r chi.Router) {
 		r.Use(userMiddleware.SetUserMiddleware)
 		r.Use(userMiddleware.RequireUserMiddleware)
@@ -83,10 +84,6 @@ func main() {
 	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Page not found, dude!", http.StatusNotFound)
 	})
-
-	// todo:
-	// login -> why 'require auth' meachnism not working? (db error + general logic should be tested)
-	// general, debugging: master debug configs in vs code
 
 	http.ListenAndServe("localhost:8000", r)
 }

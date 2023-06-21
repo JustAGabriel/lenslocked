@@ -1,2 +1,8 @@
-# ignore binary
+# binary
 lenslocked
+
+# app configurations
+.env
+
+# code playground
+exp/exp.go
