@@ -1,6 +1,7 @@
 package models
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/justagabriel/lenslocked/util"
@@ -76,5 +77,21 @@ func (es *EmailService) Send(email Email) error {
 		log.Fatalf("failed to send mail: %s", err)
 		return err
 	}
+	return nil
+}
+
+func (es *EmailService) SendForgotPasswordEmail(to, resetURL string) error {
+	email := Email{
+		To:        to,
+		Subject:   "lenslock, password reset",
+		Plaintext: "To reset your password, please click the following link: " + resetURL,
+		HTML:      "<p>To reset your password, please visit the following link: <a href=\"" + resetURL + "\"/></p>",
+	}
+
+	err := es.Send(email)
+	if err != nil {
+		return fmt.Errorf("error while sending 'forgot pw' eamil: %w", err)
+	}
+
 	return nil
 }
