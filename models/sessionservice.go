@@ -7,7 +7,6 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/justagabriel/lenslocked/models"
 	"github.com/justagabriel/lenslocked/util"
 	"gorm.io/gorm"
 )
@@ -28,21 +27,21 @@ func hashToken(token string) string {
 }
 
 func NewSessionService(db *gorm.DB, userService *UserService) SessionService {
-	db.AutoMigrate(&models.Session{})
+	db.AutoMigrate(&Session{})
 	return SessionService{
 		db:          db,
 		userService: userService,
 	}
 }
 
-func (ss *SessionService) GetNewSession(userId uint) (*models.Session, error) {
+func (ss *SessionService) GetNewSession(userId uint) (*Session, error) {
 	// implement deletion of previous sessions associated with the given user id
 	// usecase: user cookie was deleted -> auth will fail, new user session created -- conflict in db since
 	// userid already is meantioned in other sesssion entry
-	userExistsQueryResult := ss.db.Model(&models.Session{}).First(&models.Session{UserID: userId})
+	userExistsQueryResult := ss.db.Model(&Session{}).First(&Session{UserID: userId})
 	hasUserExistingSession := userExistsQueryResult.Error == nil && userExistsQueryResult.RowsAffected == 1
 	if hasUserExistingSession {
-		userSessionDeletionResult := ss.db.Unscoped().Model(&models.Session{}).Where(&models.Session{UserID: userId}).Delete(&models.Session{})
+		userSessionDeletionResult := ss.db.Unscoped().Model(&Session{}).Where(&Session{UserID: userId}).Delete(&Session{})
 		if userSessionDeletionResult.Error != nil {
 			log.Default().Printf("error while deleting session: %s", userSessionDeletionResult.Error)
 		}
@@ -50,12 +49,12 @@ func (ss *SessionService) GetNewSession(userId uint) (*models.Session, error) {
 
 	token := util.GetSessionToken()
 	hashedToken := hashToken(token)
-	s := &models.Session{
+	s := &Session{
 		UserID: userId,
 		Token:  hashedToken,
 	}
 
-	creation_transaction := ss.db.Model(&models.Session{}).Create(s)
+	creation_transaction := ss.db.Model(&Session{}).Create(s)
 	if creation_transaction.Error != nil {
 		return nil, fmt.Errorf("error while creating new session: %s", creation_transaction.Error)
 	}
@@ -64,22 +63,22 @@ func (ss *SessionService) GetNewSession(userId uint) (*models.Session, error) {
 	return s, nil
 }
 
-func (ss *SessionService) GetSessionByToken(unhashedToken string) (models.Session, error) {
+func (ss *SessionService) GetSessionByToken(unhashedToken string) (Session, error) {
 	hashedToken := hashToken(unhashedToken)
-	session := models.Session{
+	session := Session{
 		Token: hashedToken,
 	}
 
-	res := ss.db.Model(&models.Session{}).First(&session)
+	res := ss.db.Model(&Session{}).First(&session)
 	if res.Error != nil {
-		return models.Session{}, res.Error
+		return Session{}, res.Error
 	}
 
 	return session, nil
 }
 
 func (ss *SessionService) DeleteSessionByToken(token string) error {
-	result := ss.db.Delete(&models.Session{Token: token})
+	result := ss.db.Delete(&Session{Token: token})
 	if result.Error != nil {
 		return result.Error
 	}
@@ -87,20 +86,20 @@ func (ss *SessionService) DeleteSessionByToken(token string) error {
 	return nil
 }
 
-func (ss *SessionService) GetUserFromRequest(r *http.Request) (models.User, error) {
+func (ss *SessionService) GetUserFromRequest(r *http.Request) (User, error) {
 	sessionToken, err := util.GetSessionTokenFromCookie(SessionCookieName, r)
 	if err != nil {
-		return models.User{}, fmt.Errorf("error while trying to get session: %+v", err)
+		return User{}, fmt.Errorf("error while trying to get session: %+v", err)
 	}
 
 	s, err2 := ss.GetSessionByToken(sessionToken)
 	if err2 != nil {
-		return models.User{}, fmt.Errorf("error while trying to get session: %+v", err2)
+		return User{}, fmt.Errorf("error while trying to get session: %+v", err2)
 	}
 
 	u, err3 := ss.userService.GetUserById(s.UserID)
 	if err3 != nil {
-		return models.User{}, fmt.Errorf("error while trying to get session: %+v", err3)
+		return User{}, fmt.Errorf("error while trying to get session: %+v", err3)
 	}
 
 	return u, nil

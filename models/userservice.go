@@ -5,7 +5,6 @@ import (
 	"log"
 	"strings"
 
-	m "github.com/justagabriel/lenslocked/models"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
@@ -23,23 +22,23 @@ type UserService struct {
 }
 
 func NewUserService(db *gorm.DB) UserService {
-	db.AutoMigrate(&m.User{})
+	db.AutoMigrate(&User{})
 	return UserService{
 		db: db,
 	}
 }
 
-func (s *UserService) CreateUser(u m.User) {
+func (s *UserService) CreateUser(u User) {
 	u.Email = strings.ToLower(u.Email)
-	_ = s.db.Model(&m.User{}).Create(&u)
+	_ = s.db.Model(&User{}).Create(&u)
 }
 
-func (s *UserService) GetUserByEmail(email string) (m.User, error) {
+func (s *UserService) GetUserByEmail(email string) (User, error) {
 	normalizedEmail := strings.ToLower(email)
 	log.Default().Printf("try retrieving user with email '%s'", normalizedEmail)
 
-	var usr m.User
-	res := s.db.Where(&m.User{Email: normalizedEmail}).First(&usr)
+	var usr User
+	res := s.db.Where(&User{Email: normalizedEmail}).First(&usr)
 	if res.Error != nil {
 		return usr, res.Error
 	}
@@ -51,14 +50,14 @@ func (s *UserService) GetUserByEmail(email string) (m.User, error) {
 	return usr, nil
 }
 
-func (s *UserService) GetUserById(id uint) (m.User, error) {
-	usr := m.User{
+func (s *UserService) GetUserById(id uint) (User, error) {
+	usr := User{
 		Model: gorm.Model{ID: id},
 	}
 
 	res := s.db.Where(&usr).First(&usr)
 	if res.Error != nil {
-		return m.User{}, res.Error
+		return User{}, res.Error
 	}
 
 	return usr, nil
