@@ -5,28 +5,37 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"net/url"
 
 	"github.com/gorilla/csrf"
 	"github.com/justagabriel/lenslocked/models"
 	"github.com/justagabriel/lenslocked/util"
+	"gorm.io/gorm/logger"
 )
 
 type UITemplates struct {
-	New    template.Template
-	Signin template.Template
+	New            template.Template
+	Signin         template.Template
+	ForgotPassword template.Template
+	CheckYourEmail template.Template
 }
 
 type UserController struct {
-	templates      UITemplates
-	dbService      *models.UserService
-	sessionService *models.SessionService
+	templates            UITemplates
+	dbService            *models.UserService
+	sessionService       *models.SessionService
+	passwordResetService *models.PasswordResetService
+	emailService         *models.EmailService
 }
 
-func NewUserController(uiTemplates UITemplates, dbService *models.UserService, sessionService *models.SessionService) UserController {
+func NewUserController(uiTemplates UITemplates, dbService *models.UserService, sessionService *models.SessionService,
+	pwResetService *models.PasswordResetService, emailService *models.EmailService) UserController {
 	return UserController{
-		templates:      uiTemplates,
-		dbService:      dbService,
-		sessionService: sessionService,
+		templates:            uiTemplates,
+		dbService:            dbService,
+		sessionService:       sessionService,
+		passwordResetService: pwResetService,
+		emailService:         emailService,
 	}
 }
 
@@ -137,4 +146,42 @@ func (uc *UserController) GETSignout(w http.ResponseWriter, r *http.Request) {
 	}
 
 	http.Redirect(w, r, WebsiteHomeURL, http.StatusFound)
+}
+
+func (uc *UserController) GETForgotPassword(w http.ResponseWriter, r *http.Request) {
+	var data struct {
+		TemplateBaseData
+		Email     string
+		CSRFField string
+	}
+
+	data.Email = r.FormValue("email")
+	data.CSRFField = string(csrf.TemplateField(r))
+	err := uc.templates.ForgotPassword.Execute(w, data)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func (uc UserController) POSTForgotPassword(w http.ResponseWriter, r *http.Request) {
+	var data struct {
+		Email string
+	}
+
+	data.Email = r.FormValue("email")
+	pwReset, err := uc.passwordResetService.GetPasswordReset(data.Email)
+	if err != nil {
+		// TODO: handle email does not exist
+		logger.Default.Error(r.Context(), err.Error())
+		http.Error(w, "could not create pw reset", http.StatusInternalServerError)
+		return
+	}
+
+	vals := url.Values{
+		"token": {pwReset.Token},
+	}
+	// todo: make url configurable
+	resetURL := "https://www.lenslocked.com/reset-pw?" + vals.Encode()
+	uc.emailService.SendForgotPasswordEmail(data.Email, resetURL)
+	uc.templates.CheckYourEmail.Execute(w, data)
 }

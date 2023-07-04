@@ -2,7 +2,10 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -12,6 +15,7 @@ import (
 	"github.com/justagabriel/lenslocked/models/migrations"
 	"github.com/justagabriel/lenslocked/util"
 	"github.com/justagabriel/lenslocked/views"
+	"github.com/spf13/viper"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -38,15 +42,42 @@ func main() {
 	FaqTemplate := util.Must(views.ParseFS(views.FS, "faq", baseLayoutFilename))
 	signupTemplate := util.Must(views.ParseFS(views.FS, "signup", baseLayoutFilename))
 	signinTemplate := util.Must(views.ParseFS(views.FS, "signin", baseLayoutFilename))
+	forgotPwTemplate := util.Must(views.ParseFS(views.FS, "forgot-pw", baseLayoutFilename))
 	templates := controllers.UITemplates{
-		New:    *signupTemplate,
-		Signin: *signinTemplate,
+		New:            *signupTemplate,
+		Signin:         *signinTemplate,
+		ForgotPassword: *forgotPwTemplate,
 	}
 
 	// initialize services
+	viper.SetConfigFile(".env")
+	if err := viper.ReadInConfig(); err != nil {
+		log.Default().Printf("error while reading '.env': %v\n", err)
+	}
+
+	email_host := viper.GetString("mail_host")
+	port_str := viper.GetString("mail_port")
+	email_port, _ := strconv.Atoi(port_str)
+	email_username := viper.GetString("mail_username")
+	email_pw := viper.GetString("mail_pw")
+
+	smtpConfig := models.SMTPConfig{
+		Host:     email_host,
+		Port:     email_port,
+		Username: email_username,
+		Password: email_pw,
+	}
+	emailService, err := models.NewEmailService(smtpConfig, models.DefaultSender)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	pwResetService := models.NewPasswordResetService(db, 10, time.Minute)
+
 	userService := models.NewUserService(db)
 	sessionService := models.NewSessionService(db, &userService)
-	userController := controllers.NewUserController(templates, &userService, &sessionService)
+	userController := controllers.NewUserController(templates, &userService, &sessionService, pwResetService, emailService)
 
 	// register middlewares
 	r := chi.NewRouter()
@@ -80,6 +111,9 @@ func main() {
 	r.Get(controllers.SigninURL, userController.GETSignin)
 	r.Post(controllers.SigninURL, userController.POSTSignin)
 	r.Get(controllers.SignoutURL, userController.GETSignout)
+
+	r.Get("/forgot-pw", userController.GETForgotPassword)
+	r.Post("/forgot-pw", userController.POSTForgotPassword)
 
 	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Page not found, dude!", http.StatusNotFound)
