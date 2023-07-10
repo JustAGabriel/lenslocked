@@ -28,6 +28,12 @@ type UserController struct {
 	emailService         *models.EmailService
 }
 
+type templateData struct {
+	TemplateBaseData
+	Email     string
+	CSRFField template.HTML
+}
+
 func NewUserController(uiTemplates UITemplates, dbService *models.UserService, sessionService *models.SessionService,
 	pwResetService *models.PasswordResetService, emailService *models.EmailService) UserController {
 	return UserController{
@@ -40,12 +46,7 @@ func NewUserController(uiTemplates UITemplates, dbService *models.UserService, s
 }
 
 func (uc *UserController) GETSignup(w http.ResponseWriter, r *http.Request) {
-	type Data struct {
-		TemplateBaseData
-		CSRFField template.HTML
-	}
-
-	data := Data{
+	data := templateData{
 		CSRFField: csrf.TemplateField(r),
 	}
 
@@ -77,13 +78,7 @@ func (u *UserController) POSTSignup(w http.ResponseWriter, r *http.Request) {
 }
 
 func (uc *UserController) GETSignin(w http.ResponseWriter, r *http.Request) {
-	type SigninData struct {
-		TemplateBaseData
-		CSRFField template.HTML
-		Email     string
-	}
-
-	data := SigninData{
+	data := templateData{
 		CSRFField: csrf.TemplateField(r),
 		Email:     "",
 	}
@@ -149,14 +144,10 @@ func (uc *UserController) GETSignout(w http.ResponseWriter, r *http.Request) {
 }
 
 func (uc *UserController) GETForgotPassword(w http.ResponseWriter, r *http.Request) {
-	var data struct {
-		TemplateBaseData
-		Email     string
-		CSRFField string
+	data := templateData{
+		Email:     r.FormValue("email"),
+		CSRFField: csrf.TemplateField(r),
 	}
-
-	data.Email = r.FormValue("email")
-	data.CSRFField = string(csrf.TemplateField(r))
 	err := uc.templates.ForgotPassword.Execute(w, data)
 	if err != nil {
 		panic(err)
@@ -164,12 +155,8 @@ func (uc *UserController) GETForgotPassword(w http.ResponseWriter, r *http.Reque
 }
 
 func (uc UserController) POSTForgotPassword(w http.ResponseWriter, r *http.Request) {
-	var data struct {
-		Email string
-	}
-
-	data.Email = r.FormValue("email")
-	pwReset, err := uc.passwordResetService.GetPasswordReset(data.Email)
+	email := r.FormValue("email")
+	pwReset, err := uc.passwordResetService.GetPasswordReset(email)
 	if err != nil {
 		// TODO: handle email does not exist
 		logger.Default.Error(r.Context(), err.Error())
@@ -177,11 +164,14 @@ func (uc UserController) POSTForgotPassword(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	vals := url.Values{
+	urlQuery := url.Values{
 		"token": {pwReset.Token},
 	}
 	// todo: make url configurable
-	resetURL := "https://www.lenslocked.com/reset-pw?" + vals.Encode()
-	uc.emailService.SendForgotPasswordEmail(data.Email, resetURL)
+	serverURL := "http://localhost:8000"
+	resetURL := serverURL + "/reset-pw?" + urlQuery.Encode()
+	uc.emailService.SendForgotPasswordEmail(email, resetURL)
+
+	data := templateData{Email: email}
 	uc.templates.CheckYourEmail.Execute(w, data)
 }

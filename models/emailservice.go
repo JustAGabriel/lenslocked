@@ -39,7 +39,7 @@ func NewEmailService(config SMTPConfig, defaultSenderEmail string) (*EmailServic
 
 	es := EmailService{
 		DefaultSender: defaultSenderEmail,
-		streamLogger:  &util.StreamLogger{},
+		streamLogger:  &util.StreamLogger{Logger: log.Default()},
 		dailer:        smtpClient,
 	}
 
@@ -85,12 +85,12 @@ func (es *EmailService) SendForgotPasswordEmail(to, resetURL string) error {
 		To:        to,
 		Subject:   "lenslock, password reset",
 		Plaintext: "To reset your password, please click the following link: " + resetURL,
-		HTML:      "<p>To reset your password, please visit the following link: <a href=\"" + resetURL + "\"/></p>",
+		HTML:      `<p>To reset your password, please visit the following <a href="` + resetURL + `"/>link</a>.`,
 	}
 
 	err := es.Send(email)
 	if err != nil {
-		return fmt.Errorf("error while sending 'forgot pw' eamil: %w", err)
+		return fmt.Errorf("error while sending 'forgot pw' eamil:\n%w", err)
 	}
 
 	return nil

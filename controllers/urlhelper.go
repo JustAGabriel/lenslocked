@@ -6,9 +6,10 @@ const (
 	WebsiteFaqURL     = "/faq"
 	WebsiteContactURL = "/contact"
 
-	SignupURL  = "/signup"
-	SigninURL  = "/signin"
-	SignoutURL = "/signout"
+	SignupURL         = "/signup"
+	SigninURL         = "/signin"
+	SignoutURL        = "/signout"
+	ForgotPasswordURL = "/forgot-pw"
 
 	UserHomeURL = "/users/me"
 )

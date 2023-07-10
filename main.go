@@ -5,7 +5,6 @@ import (
 	"log"
 	"net/http"
 	"strconv"
-	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -43,10 +42,12 @@ func main() {
 	signupTemplate := util.Must(views.ParseFS(views.FS, "signup", baseLayoutFilename))
 	signinTemplate := util.Must(views.ParseFS(views.FS, "signin", baseLayoutFilename))
 	forgotPwTemplate := util.Must(views.ParseFS(views.FS, "forgot-pw", baseLayoutFilename))
+	checkYourEmailTemplate := util.Must(views.ParseFS(views.FS, "check-your-email", baseLayoutFilename))
 	templates := controllers.UITemplates{
 		New:            *signupTemplate,
 		Signin:         *signinTemplate,
 		ForgotPassword: *forgotPwTemplate,
+		CheckYourEmail: *checkYourEmailTemplate,
 	}
 
 	// initialize services
@@ -67,15 +68,15 @@ func main() {
 		Username: email_username,
 		Password: email_pw,
 	}
+
 	emailService, err := models.NewEmailService(smtpConfig, models.DefaultSender)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 
-	pwResetService := models.NewPasswordResetService(db, 10, time.Minute)
-
 	userService := models.NewUserService(db)
+	pwResetService := models.NewPasswordResetService(&userService, db)
 	sessionService := models.NewSessionService(db, &userService)
 	userController := controllers.NewUserController(templates, &userService, &sessionService, pwResetService, emailService)
 
@@ -112,8 +113,10 @@ func main() {
 	r.Post(controllers.SigninURL, userController.POSTSignin)
 	r.Get(controllers.SignoutURL, userController.GETSignout)
 
-	r.Get("/forgot-pw", userController.GETForgotPassword)
-	r.Post("/forgot-pw", userController.POSTForgotPassword)
+	r.Get(controllers.ForgotPasswordURL, userController.GETForgotPassword)
+	r.Post(controllers.ForgotPasswordURL, userController.POSTForgotPassword)
+
+	// todo: handle GET/POST "reset-pw" to allow setting a new password via email link
 
 	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Page not found, dude!", http.StatusNotFound)
