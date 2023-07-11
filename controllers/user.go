@@ -143,6 +143,16 @@ func (uc *UserController) GETSignout(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, WebsiteHomeURL, http.StatusFound)
 }
 
+func (uc *UserController) GETResetPassword(w http.ResponseWriter, r *http.Request) {
+	// check if reset token is valid (is in db + has'nt expired)
+
+	// send form with email prefilled
+}
+
+func (uc *UserController) POSTResetPassword(w http.ResponseWriter, r *http.Request) {
+
+}
+
 func (uc *UserController) GETForgotPassword(w http.ResponseWriter, r *http.Request) {
 	data := templateData{
 		Email:     r.FormValue("email"),
@@ -156,7 +166,7 @@ func (uc *UserController) GETForgotPassword(w http.ResponseWriter, r *http.Reque
 
 func (uc UserController) POSTForgotPassword(w http.ResponseWriter, r *http.Request) {
 	email := r.FormValue("email")
-	pwReset, err := uc.passwordResetService.GetPasswordReset(email)
+	pwReset, err := uc.passwordResetService.CreatePasswordReset(email)
 	if err != nil {
 		// TODO: handle email does not exist
 		logger.Default.Error(r.Context(), err.Error())

@@ -28,7 +28,29 @@ func NewPasswordResetService(userService *UserService, db *gorm.DB) *PasswordRes
 	}
 }
 
-func (prs *PasswordResetService) GetPasswordReset(email string) (PasswordReset, error) {
+func (prs *PasswordResetService) DeletePasswordReset(pwr PasswordReset) {
+	pwResetDeletionResult := prs.db.Unscoped().Model(&PasswordReset{}).Delete(&pwr)
+	if pwResetDeletionResult.Error != nil {
+		log.Default().Printf("error while deleting existing pw reset token: %s", pwResetDeletionResult.Error)
+	}
+}
+
+func (prs *PasswordResetService) GetPasswordReset(usr User) (PasswordReset, error) {
+	var existingPwReset PasswordReset
+	dbQueryResult := prs.db.Where(&PasswordReset{UserID: usr.ID}).First(&existingPwReset)
+	if dbQueryResult.Error != nil {
+		return PasswordReset{}, nil
+	}
+
+	if existingPwReset.HasExpired() {
+		prs.DeletePasswordReset(existingPwReset)
+		return PasswordReset{}, errors.New("password reset has expired")
+	}
+
+	return existingPwReset, nil
+}
+
+func (prs *PasswordResetService) CreatePasswordReset(email string) (PasswordReset, error) {
 	usr, err := prs.userService.GetUserByEmail(email)
 	if err != nil {
 		return PasswordReset{}, err
@@ -46,13 +68,9 @@ func (prs *PasswordResetService) GetPasswordReset(email string) (PasswordReset, 
 		ExpiresAt: time.Now().UTC().Add(defaultTokenExpirationDuration),
 	}
 
-	var existingPwReset PasswordReset
-	_ = prs.db.Where(&PasswordReset{UserID: usr.ID}).First(&existingPwReset)
-	if existingPwReset.Token != "" {
-		pwResetDeletionResult := prs.db.Unscoped().Model(&PasswordReset{}).Where(&PasswordReset{UserID: usr.ID}).Delete(&PasswordReset{})
-		if pwResetDeletionResult.Error != nil {
-			log.Default().Printf("error while deleting existing pw reset token: %s", pwResetDeletionResult.Error)
-		}
+	existingPwReset, err := prs.GetPasswordReset(usr)
+	if err == nil {
+		prs.DeletePasswordReset(existingPwReset)
 	}
 
 	pwResetCreationResult := prs.db.Model(&PasswordReset{}).Create(&pwReset)

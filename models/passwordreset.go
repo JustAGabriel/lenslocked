@@ -12,3 +12,7 @@ type PasswordReset struct {
 	Token     string
 	ExpiresAt time.Time
 }
+
+func (pwr PasswordReset) HasExpired() bool {
+	return time.Now().UTC().After(pwr.ExpiresAt)
+}
